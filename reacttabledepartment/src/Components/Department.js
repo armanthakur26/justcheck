@@ -1,10 +1,7 @@
 import axios from 'axios';
 import React, { Component } from 'react'
 import DataTable from 'react-data-table-component'
-
-
-
-
+import { Link } from 'react-router-dom';
 class Department extends Component {
     constructor(props) {
         super(props);
@@ -29,14 +26,6 @@ class Department extends Component {
       componentDidMount() {
         this.getdepartments();
         this.expandDepartment();
-      }
-      getdepartments=()=>{
-        axios
-          .get("https://localhost:7038/api/Department")
-          .then((response) => { this.setState({ Department: response.data}); })
-          .catch((error) => {
-            console.log(error);
-          });
       }
       adddata=()=>{
         this.setState({
@@ -181,45 +170,75 @@ class Department extends Component {
             console.error("Error editing shipment:", error);
           }
         };
+        getdepartments = () => {
+          axios
+            .get("https://localhost:7038/api/Department")
+            .then((response) => {
+              this.setState({ Department: response.data });
+              this.expandAllDepartments(response.data);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        };
+        
+        expandAllDepartments = (departments) => {
+          departments.forEach(department => {
+            this.expandDepartment(department.id);
+          });
+        };
+        
         expandDepartment = async (id) => {
           try {
-            const response = await axios.get(`https://localhost:7038/api/Students/department/${1}`);
-            this.setState({ expandedStudentData: response.data });
+            const response = await axios.get(
+              `https://localhost:7038/api/Students/department/${id}`
+            );
+            this.setState(prevState => ({ 
+              expandedStudentData: [...prevState.expandedStudentData ,...response.data] 
+            }));
             console.log(response.data);
           } catch (error) {
             console.error('Error fetching related students:', error);
           }
         };
         
-      
     
+ 
         expandableRowsComponent = () => {
+          const studentscolumns = [
+          {
+            name: "Student Name",
+            selector: (e) => e.name,
+            sortable: true,
+          },
+          {
+            name: "Student Age",
+            selector: (e) => e.age,
+            sortable: true,
+          },]
           return (
             <div>
-              {this.state.expandedStudentData && (
-                <ul>
-                  {this.state.expandedStudentData.map((student) => (
-                    <li key={student.id}>{student.name}</li>
-                  ))}
-                </ul>
-              )}
+           <DataTable  
+           columns={studentscolumns}
+           data={this.state.expandedStudentData}
+           pagination 
+           highlightOnHover
+           fixedHeader
+            />
             </div>
           );
         };
-       
-                
-        
   render() {
     const columns = [
         {
-          name: "Name",
+          name: "Brach Name",
           selector: (e) => e.name,
           sortable: true,
         },
         {
           name: "image",
           selector: (e) => <img height={70} width={70} src={e.image} alt="image" />,
-        }, {
+        },  {
           name: "Actions",
           selector: (e) => (
             <>
@@ -233,8 +252,9 @@ class Department extends Component {
         },]
     return (
       
-      <div>
-   <h2>Department</h2>
+      <div  style={{height:"50%",width:"50%", marginLeft:"20%"}}>
+   <h2>Department Details</h2>
+
    {this.state.iseditmultiple && (
 <div class="modal fade" id="editmultiple" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -285,6 +305,8 @@ class Department extends Component {
       </div>
     </div>
   </div></div>}
+   
+   <Link to="/Students"><button type="button" class="btn btn-primary"style={{marginRight:'90%'}}  >Go to Students portal</button></Link>
    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addDepartmentModal" style={{marginLeft:'80%'}} onClick={this.adddata}>Add Department</button>
 {this.state.isadd && (
   <div class="modal fade" id="addDepartmentModal" tabindex="-1" role="dialog" aria-labelledby="addDepartmentModalLabel" aria-hidden="true">
@@ -353,7 +375,8 @@ class Department extends Component {
     </div>
   </div>
 )}
-   <DataTable
+
+   <DataTable 
     columns={columns}
     data={this.state.Department}
     pagination
@@ -368,12 +391,12 @@ class Department extends Component {
    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#Deleteallmodel" onClick={this.isdeletemodel}><i className="fas fa-trash"></i></button>
   </div>}
   expandableRows
-          expandableRowExpanded={(row) => row.id === this.state.expandedDepartmentId}
-          expandableRowsComponent={this.expandableRowsComponent}
-         onRowClicked={(row) => this.expandDepartment(row.id)}
-         
-        />
-    
+  expandableRowsComponent={(row)=>this.expandableRowsComponent(row.id)}
+
+onRowClicked={(row)=>this.expandDepartment(row.id)}
+expandOnRowClicked={false}
+
+/>
       </div>
     )
   }
